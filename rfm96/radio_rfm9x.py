@@ -47,6 +47,7 @@ width = display.width
 height = display.height
 
 # Configure LoRa Radio
+RADIO_FREQ_MHZ = 433.0
 CS = DigitalInOut(board.CE1)
 RESET = DigitalInOut(board.D25)
 spi = busio.SPI(board.SCK, MOSI=board.MOSI, MISO=board.MISO)
@@ -71,6 +72,7 @@ while True:
         display.fill(0)
         prev_packet = packet
         print("Packet Received!")
+        print(prev_packet)
         packet_text = str(prev_packet, "utf-8")
         display.text('RX: ', 0, 0, 1)
         display.text(packet_text, 25, 0, 1)
