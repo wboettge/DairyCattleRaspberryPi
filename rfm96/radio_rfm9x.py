@@ -51,9 +51,13 @@ RADIO_FREQ_MHZ = 433.0
 CS = DigitalInOut(board.CE1)
 RESET = DigitalInOut(board.D25)
 spi = busio.SPI(board.SCK, MOSI=board.MOSI, MISO=board.MISO)
-rfm9x = adafruit_rfm9x.RFM9x(spi, CS, RESET, 915.0)
+rfm9x = adafruit_rfm9x.RFM9x(spi, CS, RESET, RADIO_FREQ_MHZ, preamble_length=8)
+
 rfm9x.tx_power = 23
 rfm9x.signal_bandwidth = 250000
+rfm9x.spreading_factor = 7
+rfm9x.coding_rate = 5
+
 prev_packet = None
 
 while True:
