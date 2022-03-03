@@ -4,10 +4,9 @@ UART_PORT = '/dev/ttyACM0'
 BAUD_RATE = 115200
 
 ser = serial.Serial(port=UART_PORT, baudrate=115200)
-print(ser.name)
 try:
     while(True):
-        print(ser.readline())
+        print(str(ser.readline(), 'utf8'))
 
 except KeyboardInterrupt:
     print('Closing')
