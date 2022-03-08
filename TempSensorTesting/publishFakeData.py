@@ -2,7 +2,8 @@
 # SPDX-License-Identifier: Apache-2.0.
 
 import argparse
-from awscrt import io, mqtt, auth, http
+from multiprocessing import connection
+from awscrt import io, mqtt, exceptions
 from awsiot import mqtt_connection_builder
 import sys
 import threading
@@ -96,12 +97,12 @@ def gen_fake_data(start=20.0, min=20.0, max=25.0):
         )[0]
         cur = cur + change_val if trending_up else cur - change_val
         cur = round(cur, 3)
-        if cur <= 20 or 25 <= cur:
-            trending_up = not trending_up
+        if cur <= min:
+            trending_up = True
+        elif cur >= max:
+            trending_up = False
         yield cur
 
-
-    
 
 if __name__ == '__main__':
     # Spin up resources
@@ -126,11 +127,18 @@ if __name__ == '__main__':
     print("Connecting to {} with client ID '{}'...".format(
         args.endpoint, args.client_id))
 
-    connect_future = mqtt_connection.connect()
-
-    # Future.result() waits until a result is available
-    connect_future.result()
-    print("Connected!")
+    connection_attempts = 0
+    while connection_attempts < 6:
+        connection_attempts += 1
+        try:
+            connect_future = mqtt_connection.connect()
+            connect_future.result()
+            print("Connected!")
+            break
+        except exceptions.AwsCrtError:
+            print("Connection Failed, retring...")
+            mqtt_connection.disconnect()
+            time.sleep(10)
 
     # Subscribe
     print("Subscribing to topic '{}'...".format(args.topic))
