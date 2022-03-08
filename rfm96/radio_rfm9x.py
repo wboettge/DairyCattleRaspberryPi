@@ -9,6 +9,7 @@ Learn Guide: https://learn.adafruit.com/lora-and-lorawan-for-raspberry-pi
 Author: Brent Rubell for Adafruit Industries
 """
 # Import Python System Libraries
+from socketserver import ThreadingUDPServer
 import time
 # Import Blinka Libraries
 import busio
@@ -51,14 +52,16 @@ RADIO_FREQ_MHZ = 433.0
 CS = DigitalInOut(board.CE1)
 RESET = DigitalInOut(board.D25)
 spi = busio.SPI(board.SCK, MOSI=board.MOSI, MISO=board.MISO)
-rfm9x = adafruit_rfm9x.RFM9x(spi, CS, RESET, RADIO_FREQ_MHZ, preamble_length=8)
+rfm9x = adafruit_rfm9x.RFM9x(spi, CS, RESET, RADIO_FREQ_MHZ, crc=False)
 
-rfm9x.tx_power = 23
-rfm9x.signal_bandwidth = 250000
+rfm9x.tx_power = 14
+rfm9x.signal_bandwidth = 125000
 rfm9x.spreading_factor = 7
 rfm9x.coding_rate = 5
 
 prev_packet = None
+
+print(rfm9x.destination)
 
 while True:
     packet = None
@@ -67,7 +70,7 @@ while True:
     display.text('RasPi LoRa', 35, 0, 1)
 
     # check for packet rx
-    packet = rfm9x.receive()
+    packet = rfm9x.receive(with_header=True)
     if packet is None:
         display.show()
         display.text('- Waiting for PKT -', 15, 20, 1)
@@ -78,8 +81,9 @@ while True:
         print("Packet Received!")
         print(prev_packet)
         packet_text = str(prev_packet, "utf-8")
-        display.text('RX: ', 0, 0, 1)
-        display.text(packet_text, 25, 0, 1)
+        print(packet_text)
+        # display.text('RX: ', 0, 0, 1)
+        # display.text(packet_text, 25, 0, 1)
         time.sleep(1)
 
     if not btnA.value:
