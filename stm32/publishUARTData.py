@@ -14,6 +14,12 @@ import platform
 import random
 import serial
 import time
+ 
+ #UART
+UART_PORT = '/dev/ttyACM0'
+BAUD_RATE = 115200
+
+ser = serial.Serial(port=UART_PORT, baudrate=9600)
 
 # This sample uses the Message Broker for AWS IoT to send and receive messages
 # through an MQTT connection. On startup, the device connects to the server,
@@ -153,6 +159,8 @@ if __name__ == '__main__':
     # Publish message to server desired number of times.
     # This step is skipped if message is blank.
     # This step loops forever if count was set to 0.
+
+
     if args.count == 0:
         print ("Sending messages until program killed")
     else:
@@ -165,7 +173,7 @@ if __name__ == '__main__':
             message = {
                 'Device_ID': platform.node(),
                 'Data': {
-                    'Tempurature': next(data_gen)
+                'Tempurature': next(str(ser.readline(), 'utf8'))
                 }
             }
             print("Publishing message to topic '{}': {}".format(args.topic, message))
