@@ -174,7 +174,7 @@ if __name__ == '__main__':
             message = {
                 'Device_ID': platform.node(),
                 'Data': {
-                'Tempurature': float(string.strip(data))
+                'Tempurature': float(data.strip())
                 }
             }
             print("Publishing message to topic '{}': {}".format(args.topic, message))
