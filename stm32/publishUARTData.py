@@ -16,7 +16,7 @@ import serial
 import time
  
  #UART
-UART_PORT = '/dev/ttyACM0'
+UART_PORT = '/dev/ttyACM1'
 BAUD_RATE = 115200
 
 ser = serial.Serial(port=UART_PORT, baudrate=9600)
