@@ -167,13 +167,14 @@ if __name__ == '__main__':
         print ("Sending {} message(s)".format(args.count))
 
     publish_count = 1
-    data_gen = gen_fake_data()
     while (publish_count <= args.count) or (args.count == 0):
         try:
+            data = (str(ser.readline(), 'utf8'))
+            print(data)
             message = {
                 'Device_ID': platform.node(),
                 'Data': {
-                'Tempurature': next(str(ser.readline(), 'utf8'))
+                'Tempurature': data
                 }
             }
             print("Publishing message to topic '{}': {}".format(args.topic, message))
