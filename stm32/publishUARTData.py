@@ -29,7 +29,7 @@ if len(ports) == 0:
 UART_PORT = ports[0].device
 BAUD_RATE = 9600
 # Initialize the UART connection
-ser = serial.Serial(port=UART_PORT, baudrate=9600)
+ser = serial.Serial(port=UART_PORT, baudrate=BAUD_RATE)
 
 # This sample uses the Message Broker for AWS IoT to send and receive messages
 # through an MQTT connection. On startup, the device connects to the server,
