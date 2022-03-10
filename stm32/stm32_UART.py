@@ -1,9 +1,15 @@
 import serial
 
-UART_PORT = '/dev/ttyACM0'
-BAUD_RATE = 115200
+ports = list(serial.tools.list_ports.grep('ACM'))
+if len(ports) == 0:
+    print('Cannot find UART port, exiting...')
+    exit(-1)
 
-ser = serial.Serial(port=UART_PORT, baudrate=9600)
+UART_PORT = ports[0].device
+BAUD_RATE = 9600
+
+ser = serial.Serial(port=UART_PORT, baudrate=BAUD_RATE)
+# Read from UART and print line-by-line
 try:
     while(True):
         print(str(ser.readline(), 'utf8'), end='')

@@ -16,12 +16,9 @@ import serial
 import serial.tools.list_ports
 import time
  
- #UART
 ports = list(serial.tools.list_ports.grep('ACM'))
-if len(ports) != 1:
-    for port in ports:
-        print(port)
-    print('Cannot find UART port or too many ports, exiting...')
+if len(ports) == 0:
+    print('Cannot find UART port, exiting...')
     exit(-1)
 
 UART_PORT = ports[0].device
