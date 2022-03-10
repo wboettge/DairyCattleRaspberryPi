@@ -13,11 +13,19 @@ import json
 import platform
 import random
 import serial
+import serial.tools.list_ports
 import time
  
  #UART
-UART_PORT = '/dev/ttyACM1'
-BAUD_RATE = 115200
+ports = list(serial.tools.list_ports.grep('ACM'))
+if len(ports) != 1:
+    for port in ports:
+        print(port)
+    print('Cannot find UART port or too many ports, exiting...')
+    exit(-1)
+
+UART_PORT = ports[0].device
+BAUD_RATE = 9600
 
 ser = serial.Serial(port=UART_PORT, baudrate=9600)
 
@@ -170,11 +178,11 @@ if __name__ == '__main__':
     while (publish_count <= args.count) or (args.count == 0):
         try:
             data = (str(ser.readline(), 'utf8'))
-            print(data)
+            print(data, end='')
             message = {
                 'Device_ID': platform.node(),
                 'Data': {
-                'Tempurature': float(data.strip())
+                    'Tempurature': float(data.strip())
                 }
             }
             print("Publishing message to topic '{}': {}".format(args.topic, message))
@@ -183,7 +191,6 @@ if __name__ == '__main__':
                 topic=args.topic,
                 payload=message_json,
                 qos=mqtt.QoS.AT_LEAST_ONCE)
-            time.sleep(args.timeout)
             publish_count += 1
         except Exception:
             time.sleep(args.timeout)
