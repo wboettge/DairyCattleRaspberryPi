@@ -16,17 +16,19 @@ import time
 
 
 # Load local configuration settings
-# a .env file must be located in the directory and include
+# a .env file must be located in the directory and include definitions for:
+# AWS_ENDPOINT, CERT_FILE, PRI_KEY_FILE, and ROOT_CA_FILE as 
 load_dotenv()
- 
+
+# Searches for available ports for UART (i.e. /dev/ACM0, /dev/ACM1)
+# If there are multiple, defaults to the first one
 ports = list(serial.tools.list_ports.grep('ACM'))
 if len(ports) == 0:
     print('Cannot find UART port, exiting...')
     exit(-1)
-
 UART_PORT = ports[0].device
 BAUD_RATE = 9600
-
+# Initialize the UART connection
 ser = serial.Serial(port=UART_PORT, baudrate=9600)
 
 # This sample uses the Message Broker for AWS IoT to send and receive messages
@@ -34,7 +36,6 @@ ser = serial.Serial(port=UART_PORT, baudrate=9600)
 # subscribes to a topic, and begins publishing messages to that topic.
 # The device should receive those same messages back from the message broker,
 # since it is subscribed to that same topic.
-
 
 received_count = 0
 received_all_event = threading.Event()
