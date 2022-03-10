@@ -20,7 +20,7 @@ import time
 # AWS_ENDPOINT, CERT_FILE, PRI_KEY_FILE, and ROOT_CA_FILE as 
 load_dotenv()
 
-# Searches for available ports for UART (i.e. /dev/ACM0, /dev/ACM1)
+# Searches for available ports for UART (i.e. /dev/ttyACM0, /dev/ttyACM1)
 # If there are multiple, defaults to the first one
 ports = list(serial.tools.list_ports.grep('ACM'))
 if len(ports) == 0:
@@ -127,11 +127,11 @@ if __name__ == '__main__':
 
     while True:
         try:
-            data = (str(ser.readline(), 'utf8'))
+            data = float(ser.readline())
             message = {
                 'Device_ID': platform.node(),
                 'Data': {
-                    'Tempurature': float(data.strip())
+                    'Tempurature': data
                 }
             }
             print("Publishing message to topic '{}': {}".format(TOPIC, message))
