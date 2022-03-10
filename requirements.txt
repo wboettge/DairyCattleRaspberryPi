@@ -5,7 +5,8 @@ adafruit_circuitpython_ssd1306==2.12.4
 adafruit_ssd1306==1.6.2
 awscrt==0.9.10
 board==1.0
-boto3==1.21.11
+boto3==1.21.16
 pyserial==3.5
+python-dotenv==0.19.2
 setuptools==40.8.0
 Sphinx==4.4.0
