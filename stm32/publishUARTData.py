@@ -116,9 +116,9 @@ if __name__ == '__main__':
             time.sleep(10)
 
     # Subscribe
-    print("Subscribing to topic '{}'...".format(CLIENT_ID))
+    print("Subscribing to topic '{}'...".format(TOPIC))
     subscribe_future, packet_id = mqtt_connection.subscribe(
-        topic=CLIENT_ID,
+        topic=TOPIC,
         qos=mqtt.QoS.AT_LEAST_ONCE,
         callback=on_message_received)
 
@@ -128,17 +128,16 @@ if __name__ == '__main__':
     while True:
         try:
             data = (str(ser.readline(), 'utf8'))
-            print(data, end='')
             message = {
                 'Device_ID': platform.node(),
                 'Data': {
                     'Tempurature': float(data.strip())
                 }
             }
-            print("Publishing message to topic '{}': {}".format(CLIENT_ID, message))
+            print("Publishing message to topic '{}': {}".format(TOPIC, message))
             message_json = json.dumps(message)
             mqtt_connection.publish(
-                topic=CLIENT_ID,
+                topic=TOPIC,
                 payload=message_json,
                 qos=mqtt.QoS.AT_LEAST_ONCE)
         except Exception:
