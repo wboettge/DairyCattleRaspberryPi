@@ -8,6 +8,7 @@ from dotenv import load_dotenv
 import json
 import os
 import platform
+import re
 import serial
 import serial.tools.list_ports
 import sys
@@ -27,7 +28,7 @@ if len(ports) == 0:
     print('Cannot find UART port, exiting...')
     exit(-1)
 UART_PORT = ports[0].device
-BAUD_RATE = 9600
+BAUD_RATE = 115200
 # Initialize the UART connection
 ser = serial.Serial(port=UART_PORT, baudrate=BAUD_RATE)
 
@@ -72,6 +73,33 @@ def on_message_received(topic, payload, dup, qos, retain, **kwargs):
     print("Received message from topic '{}': {}".format(topic, payload))
     global received_count
     received_count += 1
+
+
+
+
+def parse_lora_packet(packet_str):
+    map_message_ids = {
+        'I': {
+            'cast_func': int,
+            'full_name': 'Device_ID'
+        },
+        'T': {
+            'cast_func': float,
+            'full_name': 'Temperature'
+        },
+        'A': {
+            'cast_func': str,
+            'full_name': 'Acceleration'
+        }
+    }
+    # Goal is to split a string with letters and data into two lists to build
+    # a dictionary from the packet. i.e. I08 T34.1 A1.16 -1.91 becomes
+    # {'Device_Id': 08, 'Temperature': 34.1, 'Acceleration': 1.16, -1.91}
+
+    # 'I08 T34.1 A1.16 -1.91' -> [('I', '08'), ('T', '34.1 '), ('A', '1.16 -1.91)]
+    data_points = re.findall(r'([a-zA-Z])+([^(a-zA-Z\n)]*)', packet_str) 
+    # Build a dictionary by mapping letters to full labels and casting data based on given cast_func in map above
+    return {map_message_ids[label]['full_name']: map_message_ids[label]['cast_func'](data) for label, data in data_points}
 
 
 if __name__ == '__main__':
@@ -126,13 +154,11 @@ if __name__ == '__main__':
     print("Subscribed with {}".format(str(subscribe_result['qos'])))
 
     while True:
-        try:
-            data = float(ser.readline())
+        # try:
+            data = parse_lora_packet(str(ser.readline(), 'utf8'))
             message = {
-                'Device_ID': platform.node(),
-                'Data': {
-                    'Tempurature': data
-                }
+                'Device_ID': data.pop('Device_ID'),
+                'Data': data
             }
             print("Publishing message to topic '{}': {}".format(TOPIC, message))
             message_json = json.dumps(message)
@@ -140,6 +166,7 @@ if __name__ == '__main__':
                 topic=TOPIC,
                 payload=message_json,
                 qos=mqtt.QoS.AT_LEAST_ONCE)
-        except Exception:
-            time.sleep(TIMEOUT)
+        # except Exception:
+        #     print('Exception occured, retrying...')
+        #     time.sleep(TIMEOUT)
 
