@@ -12,6 +12,7 @@ import time
 import os
 import traceback
 from uuid import uuid4
+from dotenv import load_dotenv
 
 # - Overview -
 # This sample uses the AWS IoT Jobs Service to receive and execute operations
@@ -33,6 +34,7 @@ from uuid import uuid4
 # already working on a job, it remembers to try for another when it's done.
 # This event is sent by the service when the current job completes, so the
 # sample will be continually prompted to try another job until none remain.
+load_dotenv()
 
 parser = argparse.ArgumentParser(description="Jobs sample runs all pending job executions.")
 parser.add_argument('--cert', help="File path to your client certificate, in PEM format")
@@ -57,7 +59,7 @@ is_sample_done = threading.Event()
 
 mqtt_connection = None
 jobs_client = None
-thing_name = ""
+thing_name = os.getenv('DEVICE_NAME')
 
 class LockedData:
     def __init__(self):
@@ -98,7 +100,7 @@ def try_start_next_job():
         locked_data.is_next_job_waiting = False
 
     print("Publishing request to start next job...")
-    request = iotjobs.StartNextPendingJobExecutionRequest(thing_name="dca632ef8148")
+    request = iotjobs.StartNextPendingJobExecutionRequest(os.getenv('DEVICE_NAME'))
     publish_future = jobs_client.publish_start_next_pending_job_execution(request, mqtt.QoS.AT_LEAST_ONCE)
     publish_future.add_done_callback(on_publish_start_next_pending_job_execution)
 
@@ -185,7 +187,7 @@ def job_thread_fn(job_id, job_document):
 
         print("Publishing request to update job status to SUCCEEDED...")
         request = iotjobs.UpdateJobExecutionRequest(
-            thing_name="dca632ef8148",
+            os.getenv('DEVICE_NAME'),
             job_id=job_id,
             status=iotjobs.JobStatus.SUCCEEDED)
         publish_future = jobs_client.publish_update_job_execution(request, mqtt.QoS.AT_LEAST_ONCE)
@@ -219,7 +221,7 @@ def on_update_job_execution_rejected(rejected):
 if __name__ == '__main__':
     # Process input args
     args = parser.parse_args()
-    thing_name = "dca632ef8148"
+    thing_name = os.getenv('DEVICE_NAME')
     io.init_logging(getattr(io.LogLevel, args.verbosity), 'stderr')
 
     # Spin up resources
@@ -256,8 +258,7 @@ if __name__ == '__main__':
             keep_alive_secs=30,
             http_proxy_options=proxy_options)
 
-    print("Connecting to {} with client ID '{}'...".format(
-        AWS_ENDPOINT=(os.getenv('AWS_ENDPOINT'), ('test' + str(uuid4())))))
+    print(f"Connecting to {os.getenv('AWS_ENDPOINT')} with client ID '{'test' + str(uuid4())}'...")
 
     connected_future = mqtt_connection.connect()
 
@@ -276,8 +277,7 @@ if __name__ == '__main__':
         # Note that is **is** important to wait for "accepted/rejected" subscriptions
         # to succeed before publishing the corresponding "request".
         print("Subscribing to Next Changed events...")
-        changed_subscription_request = iotjobs.NextJobExecutionChangedSubscriptionRequest(
-            thing_name="dca632ef8148")
+        changed_subscription_request = iotjobs.NextJobExecutionChangedSubscriptionRequest(os.getenv('DEVICE_NAME'))
 
         subscribed_future, _ = jobs_client.subscribe_to_next_job_execution_changed_events(
             request=changed_subscription_request,
@@ -288,8 +288,7 @@ if __name__ == '__main__':
         subscribed_future.result()
 
         print("Subscribing to Start responses...")
-        start_subscription_request = iotjobs.StartNextPendingJobExecutionSubscriptionRequest(
-            thing_name="dca632ef8148")
+        start_subscription_request = iotjobs.StartNextPendingJobExecutionSubscriptionRequest(os.getenv('DEVICE_NAME'))
         subscribed_accepted_future, _ = jobs_client.subscribe_to_start_next_pending_job_execution_accepted(
             request=start_subscription_request,
             qos=mqtt.QoS.AT_LEAST_ONCE,
@@ -307,8 +306,7 @@ if __name__ == '__main__':
         print("Subscribing to Update responses...")
         # Note that we subscribe to "+", the MQTT wildcard, to receive
         # responses about any job-ID.
-        update_subscription_request = iotjobs.UpdateJobExecutionSubscriptionRequest(
-                thing_name="dca632ef8148",
+        update_subscription_request = iotjobs.UpdateJobExecutionSubscriptionRequest(os.getenv('DEVICE_NAME'),
                 job_id='+')
 
         subscribed_accepted_future, _ = jobs_client.subscribe_to_update_job_execution_accepted(
