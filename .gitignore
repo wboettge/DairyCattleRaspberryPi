@@ -2,3 +2,4 @@ aws-iot-device-sdk-python-v2
 *.out
 testUARTScript.sh
 .env
+telegraf-links/
