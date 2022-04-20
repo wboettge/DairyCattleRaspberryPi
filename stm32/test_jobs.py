@@ -182,7 +182,7 @@ def on_start_next_pending_job_execution_rejected(rejected):
 def job_thread_fn(job_id, job_document):
     try:
         print("Starting local work on job...")
-        time.sleep(2)
+        os.system(f'{job_document.get("operation")} {job_document.get("args")}')
         print("Done working on job.")
 
         print("Publishing request to update job status to SUCCEEDED...")
@@ -231,34 +231,16 @@ if __name__ == '__main__':
     host_resolver = io.DefaultHostResolver(event_loop_group)
     client_bootstrap = io.ClientBootstrap(event_loop_group, host_resolver)
 
-    proxy_options = None
-    if (args.proxy_host):
-        proxy_options = http.HttpProxyOptions(host_name=args.proxy_host, port=args.proxy_port)
-
-    if args.use_websocket == True:
-        credentials_provider = auth.AwsCredentialsProvider.new_default_chain(client_bootstrap)
-        mqtt_connection = mqtt_connection_builder.websockets_with_default_aws_signing(
-            endpoint=os.getenv('AWS_ENDPOINT'),
-            client_bootstrap=client_bootstrap,
-            region=args.signing_region,
-            credentials_provider=credentials_provider,
-            http_proxy_options=proxy_options,
-            ca_filepath=os.getenv('ROOT_CA_FILE'),
-            client_id=args.client_id,
-            clean_session=False,
-            keep_alive_secs=30)
-
-    else:
-        mqtt_connection = mqtt_connection_builder.mtls_from_path(
-            endpoint=os.getenv('AWS_ENDPOINT'),
-            cert_filepath=os.getenv('CERT_FILE'),
-            pri_key_filepath=os.getenv('PRI_KEY_FILE'),
-            client_bootstrap=client_bootstrap,
-            ca_filepath=os.getenv('ROOT_CA_FILE'),
-            client_id=CLIENT_ID,
-            clean_session=False,
-            keep_alive_secs=30,
-            http_proxy_options=proxy_options)
+    mqtt_connection = mqtt_connection_builder.mtls_from_path(
+        endpoint=os.getenv('AWS_ENDPOINT'),
+        cert_filepath=os.getenv('CERT_FILE'),
+        pri_key_filepath=os.getenv('PRI_KEY_FILE'),
+        client_bootstrap=client_bootstrap,
+        ca_filepath=os.getenv('ROOT_CA_FILE'),
+        client_id=CLIENT_ID,
+        clean_session=False,
+        keep_alive_secs=30,
+        http_proxy_options=None)
 
     print(f"Connecting to {os.getenv('AWS_ENDPOINT')} with client ID '{CLIENT_ID}'...")
 
