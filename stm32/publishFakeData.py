@@ -91,7 +91,9 @@ def gen_fake_data(start=20.0, min=20.0, max=25.0):
 if __name__ == '__main__':
     CLIENT_ID = 'test' + str(uuid4())
     TOPIC = 'test/temp'
-    TIMEOUT = 5
+    DEFAULT_TIMEOUT = 5
+    timeout = int(os.getenv('SAMPLE_FREQUENCY')) if os.getenv('SAMPLE_FREQUENCY') is not None else DEFAULT_TIMEOUT
+    print(timeout)
 
     # Spin up resources
     event_loop_group = io.EventLoopGroup(1)
@@ -144,34 +146,17 @@ if __name__ == '__main__':
     publish_count = 1
     data_gen = gen_fake_data()
     while (True):
-        try:
-            message = {
-                'Device_ID': platform.node(),
-                'Data': {
-                    'Tempurature': next(data_gen)
-                }
+        message = {
+            'Device_ID': platform.node(),
+            'Data': {
+                'Tempurature': next(data_gen)
             }
-            print("Publishing message to topic '{}': {}".format(TOPIC, message))
-            message_json = json.dumps(message)
-            mqtt_connection.publish(
-                topic=TOPIC,
-                payload=message_json,
-                qos=mqtt.QoS.AT_LEAST_ONCE)
-            time.sleep(TIMEOUT)
-            publish_count += 1
-        except Exception:
-            time.sleep(args.timeout)
-
-    # Wait for all messages to be received.
-    # This waits forever if count was set to 0.
-    if args.count != 0 and not received_all_event.is_set():
-        print("Waiting for all messages to be received...")
-
-    received_all_event.wait()
-    print("{} message(s) received.".format(received_count))
-
-    # Disconnect
-    print("Disconnecting...")
-    disconnect_future = mqtt_connection.disconnect()
-    disconnect_future.result()
-    print("Disconnected!")
+        }
+        print("Publishing message to topic '{}': {}".format(TOPIC, message))
+        message_json = json.dumps(message)
+        mqtt_connection.publish(
+            topic=TOPIC,
+            payload=message_json,
+            qos=mqtt.QoS.AT_LEAST_ONCE)
+        time.sleep(timeout)
+        publish_count += 1
