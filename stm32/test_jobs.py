@@ -1,7 +1,6 @@
 # Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 # SPDX-License-Identifier: Apache-2.0.
 
-import argparse
 from awscrt import auth, http, io, mqtt
 from awsiot import iotjobs
 from awsiot import mqtt_connection_builder
@@ -10,6 +9,7 @@ import sys
 import threading
 import time
 import os
+import subprocess
 import traceback
 from uuid import uuid4
 from dotenv import load_dotenv
@@ -36,24 +36,6 @@ from dotenv import load_dotenv
 # sample will be continually prompted to try another job until none remain.
 load_dotenv()
 
-parser = argparse.ArgumentParser(description="Jobs sample runs all pending job executions.")
-parser.add_argument('--cert', help="File path to your client certificate, in PEM format")
-parser.add_argument('--key', help="File path to your private key file, in PEM format")
-parser.add_argument('--root-ca', help="File path to root certificate authority, in PEM format. " +
-                                      "Necessary if MQTT server uses a certificate that's not already in " +
-                                      "your trust store")
-parser.add_argument('--client-id', default="test-" + str(uuid4()), help="Client ID for MQTT connection.")
-parser.add_argument('--job-time', default=5, type=float, help="Emulate working on job by sleeping this many seconds.")
-parser.add_argument('--use-websocket', default=False, action='store_true',
-    help="To use a websocket instead of raw mqtt. If you " +
-    "specify this option you must specify a region for signing.")
-parser.add_argument('--signing-region', default='us-east-1', help="If you specify --use-web-socket, this " +
-    "is the region that will be used for computing the Sigv4 signature")
-parser.add_argument('--proxy-host', help="Hostname of proxy to connect to.")
-parser.add_argument('--proxy-port', type=int, default=8080, help="Port of proxy to connect to.")
-parser.add_argument('--verbosity', choices=[x.name for x in io.LogLevel], default=io.LogLevel.NoLogs.name,
-    help='Logging level')
-
 # Using globals to simplify sample code
 is_sample_done = threading.Event()
 
@@ -69,6 +51,8 @@ class LockedData:
         self.is_next_job_waiting = False
 
 locked_data = LockedData()
+
+processes = {}
 
 # Function for gracefully quitting this sample
 def exit(msg_or_exception):
@@ -218,45 +202,8 @@ def on_update_job_execution_rejected(rejected):
     exit("Request to update job status was rejected. code:'{}' message:'{}'.".format(
         rejected.code, rejected.message))
 
-if __name__ == '__main__':
-    CLIENT_ID = 'test' + str(uuid4())
-
-    # Process input args
-    args = parser.parse_args()
-    thing_name = os.getenv('THING_NAME')
-    io.init_logging(getattr(io.LogLevel, args.verbosity), 'stderr')
-
-    # Spin up resources
-    event_loop_group = io.EventLoopGroup(1)
-    host_resolver = io.DefaultHostResolver(event_loop_group)
-    client_bootstrap = io.ClientBootstrap(event_loop_group, host_resolver)
-
-    mqtt_connection = mqtt_connection_builder.mtls_from_path(
-        endpoint=os.getenv('AWS_ENDPOINT'),
-        cert_filepath=os.getenv('CERT_FILE'),
-        pri_key_filepath=os.getenv('PRI_KEY_FILE'),
-        client_bootstrap=client_bootstrap,
-        ca_filepath=os.getenv('ROOT_CA_FILE'),
-        client_id=CLIENT_ID,
-        clean_session=False,
-        keep_alive_secs=30,
-        http_proxy_options=None)
-
-    print(f"Connecting to {os.getenv('AWS_ENDPOINT')} with client ID '{CLIENT_ID}'...")
-
-    connected_future = mqtt_connection.connect()
-
-    jobs_client = iotjobs.IotJobsClient(mqtt_connection)
-
-    # Wait for connection to be fully established.
-    # Note that it's not necessary to wait, commands issued to the
-    # mqtt_connection before its fully connected will simply be queued.
-    # But this sample waits here so it's obvious when a connection
-    # fails or succeeds.
-    connected_future.result()
-    print("Connected!")
-    print(os.getenv('THING_NAME'))
-
+def setup_job_listener(mqtt_connection):
+    jobs_client = iotjobs.IoTJobsClient(mqtt_connection)
     try:
         # Subscribe to necessary topics.
         # Note that is **is** important to wait for "accepted/rejected" subscriptions
@@ -322,5 +269,38 @@ if __name__ == '__main__':
     except Exception as e:
         exit(e)
 
-    # Wait for the sample to finish
-    is_sample_done.wait()
+if __name__ == '__main__':
+    CLIENT_ID = 'test' + str(uuid4())
+
+    # Process input args
+    thing_name = os.getenv('THING_NAME')
+
+    # Spin up resources
+    event_loop_group = io.EventLoopGroup(1)
+    host_resolver = io.DefaultHostResolver(event_loop_group)
+    client_bootstrap = io.ClientBootstrap(event_loop_group, host_resolver)
+
+    mqtt_connection = mqtt_connection_builder.mtls_from_path(
+        endpoint=os.getenv('AWS_ENDPOINT'),
+        cert_filepath=os.getenv('CERT_FILE'),
+        pri_key_filepath=os.getenv('PRI_KEY_FILE'),
+        client_bootstrap=client_bootstrap,
+        ca_filepath=os.getenv('ROOT_CA_FILE'),
+        client_id=CLIENT_ID,
+        clean_session=False,
+        keep_alive_secs=30,
+        http_proxy_options=None)
+
+    print(f"Connecting to {os.getenv('AWS_ENDPOINT')} with client ID '{CLIENT_ID}'...")
+
+    connected_future = mqtt_connection.connect()
+
+    connected_future.result()
+    print("Connected!")
+    jobs_client = iotjobs.IoTJobsClient(mqtt_connection)
+
+    # processes['publishProcess'] = subprocess.Popen(
+    #     ['/usr/bin/python', 
+    #     '/home/pi/DairyCattleRaspberryPi/stm32/publishFakeData.py'])
+
+    # setup_job_listener(mqtt_connection)
