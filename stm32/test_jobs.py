@@ -166,7 +166,8 @@ def on_start_next_pending_job_execution_rejected(rejected):
 def job_thread_fn(job_id, job_document):
     try:
         print("Starting local work on job...")
-        os.system(f'{job_document.get("operation")} {job_document.get("args")}')
+        if job_id == RPi_Address:
+            os.Popen(['python', 'publishRPiIP.py'])
         print("Done working on job.")
 
         print("Publishing request to update job status to SUCCEEDED...")
