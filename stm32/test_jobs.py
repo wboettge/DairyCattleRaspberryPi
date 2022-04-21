@@ -203,7 +203,8 @@ def on_update_job_execution_rejected(rejected):
         rejected.code, rejected.message))
 
 def setup_job_listener(mqtt_connection):
-    jobs_client = iotjobs.IoTJobsClient(mqtt_connection)
+    global jobs_client
+    jobs_client = iotjobs.IotJobsClient(mqtt_connection)
     try:
         # Subscribe to necessary topics.
         # Note that is **is** important to wait for "accepted/rejected" subscriptions
@@ -294,13 +295,11 @@ if __name__ == '__main__':
     print(f"Connecting to {os.getenv('AWS_ENDPOINT')} with client ID '{CLIENT_ID}'...")
 
     connected_future = mqtt_connection.connect()
-
     connected_future.result()
     print("Connected!")
-    jobs_client = iotjobs.IoTJobsClient(mqtt_connection)
 
     # processes['publishProcess'] = subprocess.Popen(
     #     ['/usr/bin/python', 
     #     '/home/pi/DairyCattleRaspberryPi/stm32/publishFakeData.py'])
 
-    # setup_job_listener(mqtt_connection)
+    setup_job_listener(mqtt_connection)
