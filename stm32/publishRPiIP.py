@@ -155,7 +155,7 @@ if __name__ == '__main__':
                 'IP Address': myIP
             }
             print("Publishing message to topic '{}': {}".format(TOPIC, message))
-            i += 1
+            i = 1
             message_json = json.dumps(message)
             mqtt_connection.publish(
                 topic=TOPIC,
