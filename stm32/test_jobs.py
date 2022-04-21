@@ -166,8 +166,7 @@ def on_start_next_pending_job_execution_rejected(rejected):
 def job_thread_fn(job_id, job_document):
     try:
         print("Starting local work on job...")
-        if job_id == RPi_Address:
-            os.Popen(['python', 'publishRPiIP.py'])
+        execute_from_job_document(job_document)
         print("Done working on job.")
 
         print("Publishing request to update job status to SUCCEEDED...")
@@ -177,6 +176,24 @@ def job_thread_fn(job_id, job_document):
             status=iotjobs.JobStatus.SUCCEEDED)
         publish_future = jobs_client.publish_update_job_execution(request, mqtt.QoS.AT_LEAST_ONCE)
         publish_future.add_done_callback(on_publish_update_job_execution)
+
+    except Exception as e:
+        exit(e)
+
+# TODO error checking, more than just python
+def execute_from_job_document(job_document):
+    try:
+        for step in job_document['steps']:
+            action = step['action']
+            actionType = action['type']
+            actionInput = action['input']
+            print(actionType)
+            if actionType == "runHandler":
+                command = ['python', actionInput['handler']]
+                if actionInput.get('args'):
+                    command = [actionInput['handler']].append(actionInput.get('args'))
+                print(f"Popen with: {command}")
+                subprocess.Popen(command)
 
     except Exception as e:
         exit(e)
@@ -272,6 +289,8 @@ def setup_job_listener(mqtt_connection):
         exit(e)
 
 if __name__ == '__main__':
+    # Wait for internet
+    # time.sleep(10)
     CLIENT_ID = 'test' + str(uuid4())
 
     # Process input args
@@ -304,3 +323,4 @@ if __name__ == '__main__':
     #     '/home/pi/DairyCattleRaspberryPi/stm32/publishFakeData.py'])
 
     setup_job_listener(mqtt_connection)
+    is_sample_done.wait()
