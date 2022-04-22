@@ -180,24 +180,6 @@ def job_thread_fn(job_id, job_document):
     except Exception as e:
         exit(e)
 
-# TODO error checking, more than just python
-def execute_from_job_document(job_document):
-    try:
-        for step in job_document['steps']:
-            action = step['action']
-            actionType = action['type']
-            actionInput = action['input']
-            print(actionType)
-            if actionType == "runHandler":
-                command = ['python', actionInput['handler']]
-                if actionInput.get('args'):
-                    command = [actionInput['handler']].append(actionInput.get('args'))
-                print(f"Popen with: {command}")
-                subprocess.Popen(command)
-
-    except Exception as e:
-        exit(e)
-
 def on_publish_update_job_execution(future):
     # type: (Future) -> None
     try:
@@ -288,6 +270,31 @@ def setup_job_listener(mqtt_connection):
     except Exception as e:
         exit(e)
 
+
+# TODO error checking, also validate document?
+def execute_from_job_document(job_document):
+    try:
+        for step in job_document['steps']:
+            action = step['action']
+            actionType = action['type']
+            actionInput = action['input']
+            if actionType == "runHandler":
+                command = ['python', actionInput['handler']]
+                if actionInput.get('args'):
+                    command = [actionInput['handler']].append(actionInput.get('args'))
+                print(f"Popen with: {command}")
+                subprocess.Popen(command)
+            elif actionType == "updateConfigurations"
+                updateConfigurations(actionInput)
+
+    except Exception as e:
+        exit(e)
+
+# TODO not yet tested
+def updateConfigurations(actionInput):
+    for key, value in actionInput:
+        os.system(['dotenv', 'set', key, value])
+
 if __name__ == '__main__':
     # Wait for internet
     # time.sleep(10)
@@ -318,9 +325,9 @@ if __name__ == '__main__':
     connected_future.result()
     print("Connected!")
 
-    # processes['publishProcess'] = subprocess.Popen(
-    #     ['/usr/bin/python', 
-    #     '/home/pi/DairyCattleRaspberryPi/stm32/publishFakeData.py'])
+    processes['publishFakeData.py'] = subprocess.Popen(
+        ['/usr/bin/python', 
+        '/home/pi/DairyCattleRaspberryPi/stm32/publishFakeData.py'])
 
     setup_job_listener(mqtt_connection)
     is_sample_done.wait()
