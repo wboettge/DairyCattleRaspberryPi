@@ -17,7 +17,8 @@ if command -v "systemctl" > /dev/null;
 then
   if id "$user" > /dev/null && command -v "sudo" > /dev/null; then
     sudo -u "$user" python $UPDATE_CONF $args
-    sudo -u "$user" -n systemctl start "$service"
+    # sudo -u "$user" -n systemctl start "$service"
+    sudo -u "$user" python "$service" "$args"
   else
     echo "username or sudo command not found"
     systemctl start "$service"
