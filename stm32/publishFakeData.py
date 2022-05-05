@@ -20,18 +20,8 @@ import time
 # AWS_ENDPOINT, CERT_FILE, PRI_KEY_FILE, and ROOT_CA_FILE as 
 load_dotenv()
 
-# This sample uses the Message Broker for AWS IoT to send and receive messages
-# through an MQTT connection. On startup, the device connects to the server,
-# subscribes to a topic, and begins publishing messages to that topic.
-# The device should receive those same messages back from the message broker,
-# since it is subscribed to that same topic.
-
-# Using globals to simplify sample code
-
-io.init_logging(getattr(io.LogLevel, 'NoLogs'), 'stderr')
-
-received_count = 0
-received_all_event = threading.Event()
+parser = argparse.ArgumentParser(description="Send and receive messages through and MQTT connection.")
+parser.add_argument('--sample_frequency',type=float, help='how often messages are generated and sent to AWS in seconds')
 
 # Callback when connection is accidentally lost.
 def on_connection_interrupted(connection, error, **kwargs):
@@ -63,10 +53,6 @@ def on_resubscribe_complete(resubscribe_future):
 # Callback when the subscribed topic receives a message
 def on_message_received(topic, payload, dup, qos, retain, **kwargs):
     print("Received message from topic '{}': {}".format(topic, payload))
-    global received_count
-    received_count += 1
-    if received_count == 10:
-        received_all_event.set()
 
 
 def gen_fake_data(start=20.0, min=20.0, max=25.0):
@@ -89,11 +75,13 @@ def gen_fake_data(start=20.0, min=20.0, max=25.0):
 
 
 if __name__ == '__main__':
+    received_all_event = threading.Event()
+    args = parser.parse_args()
+
     CLIENT_ID = 'test' + str(uuid4())
     TOPIC = 'test/temp'
     DEFAULT_TIMEOUT = 5
-    timeout = int(os.getenv('SAMPLE_FREQUENCY')) if os.getenv('SAMPLE_FREQUENCY') is not None else DEFAULT_TIMEOUT
-    print(timeout)
+    timeout = args.sample_frequency if args.sample_frequency else DEFAULT_TIMEOUT
 
     # Spin up resources
     event_loop_group = io.EventLoopGroup(1)
@@ -143,7 +131,6 @@ if __name__ == '__main__':
     # This step is skipped if message is blank.
     # This step loops forever if count was set to 0.
  
-    publish_count = 1
     data_gen = gen_fake_data()
     while (True):
         message = {
@@ -159,4 +146,3 @@ if __name__ == '__main__':
             payload=message_json,
             qos=mqtt.QoS.AT_LEAST_ONCE)
         time.sleep(timeout)
-        publish_count += 1

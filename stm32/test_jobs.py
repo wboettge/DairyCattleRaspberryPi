@@ -166,6 +166,7 @@ def on_start_next_pending_job_execution_rejected(rejected):
 def job_thread_fn(job_id, job_document):
     try:
         print("Starting local work on job...")
+        print(job_document)
         execute_from_job_document(job_document)
         print("Done working on job.")
 
@@ -284,7 +285,7 @@ def execute_from_job_document(job_document):
                     command = [actionInput['handler']].append(actionInput.get('args'))
                 print(f"Popen with: {command}")
                 subprocess.Popen(command)
-            elif actionType == "updateConfigurations"
+            elif actionType == "updateConfigurations":
                 updateConfigurations(actionInput)
 
     except Exception as e:
@@ -325,9 +326,9 @@ if __name__ == '__main__':
     connected_future.result()
     print("Connected!")
 
-    processes['publishFakeData.py'] = subprocess.Popen(
-        ['/usr/bin/python', 
-        '/home/pi/DairyCattleRaspberryPi/stm32/publishFakeData.py'])
+    # processes['publishFakeData.py'] = subprocess.Popen(
+    #     ['/usr/bin/python', 
+    #     '/home/pi/DairyCattleRaspberryPi/stm32/publishFakeData.py'])
 
     setup_job_listener(mqtt_connection)
     is_sample_done.wait()
