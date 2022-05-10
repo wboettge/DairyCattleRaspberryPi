@@ -76,7 +76,7 @@ def gen_fake_data(start=20.0, min=20.0, max=25.0):
 
 if __name__ == '__main__':
     received_all_event = threading.Event()
-    args = parser.parse_args()
+    args, unknown = parser.parse_known_args()
 
     CLIENT_ID = 'test' + str(uuid4())
     TOPIC = 'test/temp'

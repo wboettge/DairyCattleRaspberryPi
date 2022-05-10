@@ -3,24 +3,30 @@ set -e
 
 SOURCE_DIRECTORY="/home/pi/DairyCattleRaspberryPi/stm32/"
 
-echo "Running start-services.sh"
+echo "$@"
+
 user=$1
-scriptname=$2
-shift 2
-args=$@
+args=$2
 echo "Username: $user"
-echo "Python Script to Start: $SOURCE_DIRECTORY$scriptname"
+echo "Python Script to Start: $SOURCE_DIRECTORY$args"
 echo "Arguments: $args"
 
+# Hacky way to get the first item in args
+for arg in $args
+do
+  scriptname=$arg
+  break
+done
 
 if command -v "systemctl" > /dev/null;
 then
   if id "$user" > /dev/null && command -v "sudo" > /dev/null; then
-    sudo -u "$user" python $UPDATE_CONF $args
-    # sudo -u "$user" -n systemctl start "$service"
-    sudo -u "$user" python "$SOURCE_DIRECTORY$scriptname" "$args"
+    sudo pgrep -f $scriptname
+    sudo -u nohup "$user" python $SOURCE_DIRECTORY$args  > /dev/null 2>&1 &
   else
     echo "username or sudo command not found"
-    python "$SOURCE_DIRECTORY$scriptname" "$args"
+    pkill -f $SOURCE_DIRECTORY$scriptname
+    nohup python $SOURCE_DIRECTORY$args > /dev/null 2>&1 &
   fi
 fi
+echo "done"
