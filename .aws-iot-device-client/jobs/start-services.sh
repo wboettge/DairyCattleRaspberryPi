@@ -20,12 +20,13 @@ done
 
 if command -v "systemctl" > /dev/null;
 then
-  if id "$user" > /dev/null && command -v "sudo" > /dev/null; then
-    sudo pgrep -f $scriptname
+  if id "$user" > /dev/null 2>&1 && command -v "sudo" > /dev/null; then
+    echo $(pkill -f $SOURCE_DIRECTORY$scriptname)
     sudo -u nohup "$user" python $SOURCE_DIRECTORY$args  > /dev/null 2>&1 &
   else
     echo "username or sudo command not found"
-    pkill -f $SOURCE_DIRECTORY$scriptname
+    echo $(pkill -f $SOURCE_DIRECTORY$scriptname)
+    echo "killed old"
     nohup python $SOURCE_DIRECTORY$args > /dev/null 2>&1 &
   fi
 fi
