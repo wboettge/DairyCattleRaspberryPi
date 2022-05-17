@@ -102,6 +102,11 @@ def parse_lora_packet(packet_str):
     return {map_message_ids[label]['full_name']: map_message_ids[label]['cast_func'](data) for label, data in data_points}
 
 
+def save_data_to_file(data):
+    with open(file='loraPackets.log', mode='a') as f:
+        f.write(data)
+
+
 if __name__ == '__main__':
     CLIENT_ID = 'test' + str(uuid4())
     TOPIC = 'test/temp'
@@ -156,6 +161,7 @@ if __name__ == '__main__':
     while True:
         # try:
             data = parse_lora_packet(str(ser.readline(), 'utf8'))
+            save_data_to_file(data)
             message = {
                 'Device_ID': data.pop('Device_ID'),
                 'Data': data
