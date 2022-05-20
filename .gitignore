@@ -4,4 +4,4 @@ testUARTScript.sh
 .env
 telegraf-links/
 
-lor
+loraPackets.log
